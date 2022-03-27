@@ -124,21 +124,22 @@ class PseudoMultiSet
 
     }
 
-    /**
-     * valueに一致するデータをすべて削除する
-     *
-     * @param int $value
-     */
-    public function erase_value(int $value){
-
-        $iterator = $this->lower_bound($value);
-        $start_block = $iterator[0];
-        while($this->get($iterator) === $value){
-            $this->_erase($iterator);
-            $iterator = $this->next($iterator);
-        }
-        $this->rebuild($start_block);
-    }
+//    /**
+//     * valueに一致するデータをすべて削除する
+//     * TODO
+//     *
+//     * @param int $value
+//     */
+//    public function erase_value(int $value){
+//
+//        $iterator = $this->lower_bound($value);
+//        $start_block = $iterator[0];
+//        while($this->get($iterator) === $value){
+//            $this->_erase($iterator);
+//            $iterator = $this->next($iterator);
+//        }
+//        $this->rebuild($start_block);
+//    }
 
     private function _erase($iterator){
 
@@ -267,46 +268,46 @@ class PseudoMultiSet
         return [$block_id, $max];
     }
 
-    /**
-     * 指定した値の出現回数を数える
-     * TODO　テスト
-     *
-     * @param $target
-     * @return int|mixed
-     */
-    function count_value($target){
-        $left = $this->lower_bound($target);
-        $right = $this->upper_bound($target);
-        return $this->count_iterator($left, $right);
-    }
-
-    /**
-     * 二つのpseudo-iteratorの間に存在する要素の個数[from, to)を返す
-     * TODO　テスト
-     *
-     * @param $from
-     * @param $to
-     * @return int|mixed
-     */
-    public function count_iterator($from, $to){
-        if($from === $to){
-            return 0;
-        }else{
-            if($from[0] === $to[0]){
-                return $to[1] - $from[1];
-            }else{
-                $start = $from[0] + 1;
-                $end = $to[0];
-                $ans = $this->count[$from[0]] - $from[1];
-                while($start !== $end){
-                    $ans += $this->count[$start];
-                    $start++;
-                }
-                $ans += $to[1];
-                return $ans;
-            }
-        }
-    }
+//    /**
+//     * 指定した値の出現回数を数える
+//     * TODO　
+//     *
+//     * @param $target
+//     * @return int|mixed
+//     */
+//    function count_value($target){
+//        $left = $this->lower_bound($target);
+//        $right = $this->upper_bound($target);
+//        return $this->count_iterator($left, $right);
+//    }
+//
+//    /**
+//     * 二つのpseudo-iteratorの間に存在する要素の個数[from, to)を返す
+//     * TODO　
+//     *
+//     * @param $from
+//     * @param $to
+//     * @return int|mixed
+//     */
+//    public function count_iterator($from, $to){
+//        if($from === $to){
+//            return 0;
+//        }else{
+//            if($from[0] === $to[0]){
+//                return $to[1] - $from[1];
+//            }else{
+//                $start = $from[0] + 1;
+//                $end = $to[0];
+//                $ans = $this->count[$from[0]] - $from[1];
+//                while($start !== $end){
+//                    $ans += $this->count[$start];
+//                    $start++;
+//                }
+//                $ans += $to[1];
+//                return $ans;
+//            }
+//        }
+//    }
 
     /**
      * pseudo-iteratorを一つ進める
@@ -450,159 +451,5 @@ class PseudoMultiSet
         $this->range[$block_id] = [$this->offset, $this->offset + ($range[1] - $range[0])];
     }
 
-}
-
-
-function example_ABC119_D()
-{
-    [$A, $B, $Q] = fscanf(STDIN, "%d%d%d");
-    $S = new PseudoMultiSet();
-    $T = new PseudoMultiSet();
-    while($A--){
-        [$s] = fscanf(STDIN, "%d");
-        $S->add($s);
-    }
-    while($B--){
-        [$t] = fscanf(STDIN, "%d");
-        $T->add($t);
-    }
-    $A = [];
-    while ($Q--) {
-        [$X] = fscanf(STDIN, "%d");
-        $x = $S->lower_bound($X);
-        $sx = $S->get($x)??100000000000;
-        $sx2 = $S->get($S->prev($x)) ?? -1000000000000;
-        $t = $T->lower_bound($X);
-        $st = $T->get($t) ?? 100000000000;
-        $st2 = $T->get($T->prev($t)) ?? -1000000000000;
-        $ans = max($sx, $st) - $X;
-        $ans = min($ans, $X - min($sx2, $st2));
-        $ans = min($ans, ($X - $sx2) * 2 + ($st - $X));
-        $ans = min($ans, ($X - $sx2) + ($st - $X) * 2);
-        $ans = min($ans, ($X - $st2) * 2 + ($sx - $X));
-        $ans = min($ans, ($X - $st2) + ($sx - $X) * 2);
-        $A[] = $ans;
-
-    }
-    echo implode("\n", $A);
-}
-
-
-
-function example_ABC217_D()
-{
-    [$L, $Q] = fscanf(STDIN, "%d%d");
-    $S = new PseudoMultiSet();
-    $S->add(0);
-    $S->add($L);
-    $ans = [];
-    while ($Q--) {
-        [$C, $X] = fscanf(STDIN, "%d%d");
-        if ($C === 1) {
-            $S->add($X);
-        } else {
-            $T = $S->lower_bound($X);
-            $Z = $S->get($S->prev($T));
-            $ans[] = $S->get($T) - $Z;
-        }
-    }
-    echo implode("\n", $ans);
-}
-
-function example_ABC228_D()
-{
-    $MOD = 1048576;
-    [$Q] = fscanf(STDIN, "%d");
-    $S = new PseudoMultiSet(range(0,2**20-1));
-
-    $L = [];
-    $ans = [];
-    while($Q--){
-        [$T, $X] = fscanf(STDIN, "%d%d");
-        if($T === 1){
-            $XX = $X % $MOD;
-            $A = $S->lower_bound($XX);
-            if($S->get($A)){
-                $L[$S->get($A)] = $X;
-                $S->erase($A);
-            }else{
-                $A = $S->begin();
-                $L[$S->get($A)] = $X;
-                $S->erase($A);
-            }
-        }else{
-            $X %= $MOD;
-            $ans[] = $L[$X]??-1;
-        }
-    }
-    echo implode("\n", $ans);
-}
-
-
-function example_ABC241_D()
-{
-    [$Q] = fscanf(STDIN, "%d");
-    $S = new PseudoMultiSet();
-    while ($Q--) {
-        [$A, $B, $C] = fscanf(STDIN, "%d%d%d");
-        if ($A === 1) {
-            $S->add($B);
-        } elseif ($A === 2) {
-            $iterator = $S->upper_bound($B);
-            while ($C--) {
-                $iterator = $S->prev($iterator);
-            }
-            $ans[] = $S->get($iterator) ?? -1;
-
-        } else {
-            $C--;
-            $iterator = $S->lower_bound($B);
-            while ($C--) {
-                $iterator = $S->next($iterator);
-            }
-            $ans[] = $S->get($iterator) ?? -1;
-
-        }
-    }
-    echo implode("\n", $ans);
-}
-
-function example_ABC245_E()
-{
-
-    [$N, $M] = fscanf(STDIN, "%d%d");
-    $A = fscanf(STDIN, str_repeat("%d",$N));
-    $B = fscanf(STDIN, str_repeat("%d",$N));
-    $C = fscanf(STDIN, str_repeat("%d",$M));
-    $D = fscanf(STDIN, str_repeat("%d",$M));
-    arsort($C);
-    arsort($A);
-    $AA = [];
-    foreach($A as $id => $V){
-        $AA[$V][] = $B[$id];
-    }
-    $each = [key($C), current($C)];
-    $set = new PseudoMultiSet();
-    foreach($AA as $V => $Bs){
-        arsort($Bs);
-        while($each[1] >= $V) {
-            $set->add($D[$each[0]]);
-            if(next($C) === false){
-                $each[1] = PHP_INT_MIN;
-            }else{
-                $each = [key($C), current($C)];
-            }
-        }
-        foreach($Bs as $BB){
-            $T = $set->lower_bound($BB);
-            if(!$set->get($T)){
-                echo "No";
-                exit;
-            }
-            $set->erase($T);
-        }
-
-    }
-    echo "Yes";
 }
 
