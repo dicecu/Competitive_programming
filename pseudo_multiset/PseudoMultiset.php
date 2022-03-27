@@ -21,13 +21,48 @@ class PseudoMultiSet
     //[null, null, 2, 3, 4, null, null]のとき、range = [2, 5]  となる(右側が+1)
     private array $range;
 
-    function __construct(){
+    /**
+     * PseudoMultiSet constructor
+     *
+     * 引数にソート済みの配列を与えると、高速に代入する。
+     * ソート済みでない配列を与えた場合、矛盾が生じた時点で代入を中止する。（エラーは発生しない）
+     *
+     * @param array $sorted_array
+     */
+    function __construct(array $sorted_array=[]){
         $this->count = [0];
         $this->offset = $this->rebuild_max_size;
         $this->range = [[ $this->offset,  $this->offset]];
         $this->default = new SplFixedArray($this->rebuild_max_size * 2 + 5);
         $this->tree = [$this->create_new_block()];
         $this->skip_size = $this->max_size + intdiv($this->rebuild_max_size - $this->max_size, 3);
+        $L = PHP_INT_MIN;
+        $block_id = 0;
+        $block = &$this->tree[$block_id];
+        $offset = $this->offset;
+        foreach($sorted_array as $value){
+            if($value < $L){
+                break;
+            }
+            if($offset === $this->offset -1){
+                $this->tree[] = $this->create_new_block();
+                $offset = $this->offset;
+                $block = &$this->tree[$block_id];
+                $this->range[] = [$this->offset, $this->offset];
+            }
+            $L = $value;
+            $block[$offset] = $L;
+            $offset++;
+            if($offset > $this->offset + $this->max_size){
+                $this->range[$block_id][1] = $offset;
+                $block_id++;
+                $offset = $this->offset - 1;
+            }
+
+        }
+        if($offset > $this->offset){
+            $this->range[$block_id][1] = $offset;
+        }
     }
 
     /**
@@ -49,7 +84,8 @@ class PseudoMultiSet
      *
      * @param $value
      */
-    public function add($value){
+    public function add($value): void
+    {
         [$block_id, $address] = $this->upper_bound($value);
 
         $block = &$this->tree[$block_id];
@@ -417,6 +453,119 @@ class PseudoMultiSet
 }
 
 
+function example_ABC119_D()
+{
+    [$A, $B, $Q] = fscanf(STDIN, "%d%d%d");
+    $S = new PseudoMultiSet();
+    $T = new PseudoMultiSet();
+    while($A--){
+        [$s] = fscanf(STDIN, "%d");
+        $S->add($s);
+    }
+    while($B--){
+        [$t] = fscanf(STDIN, "%d");
+        $T->add($t);
+    }
+    $A = [];
+    while ($Q--) {
+        [$X] = fscanf(STDIN, "%d");
+        $x = $S->lower_bound($X);
+        $sx = $S->get($x)??100000000000;
+        $sx2 = $S->get($S->prev($x)) ?? -1000000000000;
+        $t = $T->lower_bound($X);
+        $st = $T->get($t) ?? 100000000000;
+        $st2 = $T->get($T->prev($t)) ?? -1000000000000;
+        $ans = max($sx, $st) - $X;
+        $ans = min($ans, $X - min($sx2, $st2));
+        $ans = min($ans, ($X - $sx2) * 2 + ($st - $X));
+        $ans = min($ans, ($X - $sx2) + ($st - $X) * 2);
+        $ans = min($ans, ($X - $st2) * 2 + ($sx - $X));
+        $ans = min($ans, ($X - $st2) + ($sx - $X) * 2);
+        $A[] = $ans;
+
+    }
+    echo implode("\n", $A);
+}
+
+
+
+function example_ABC217_D()
+{
+    [$L, $Q] = fscanf(STDIN, "%d%d");
+    $S = new PseudoMultiSet();
+    $S->add(0);
+    $S->add($L);
+    $ans = [];
+    while ($Q--) {
+        [$C, $X] = fscanf(STDIN, "%d%d");
+        if ($C === 1) {
+            $S->add($X);
+        } else {
+            $T = $S->lower_bound($X);
+            $Z = $S->get($S->prev($T));
+            $ans[] = $S->get($T) - $Z;
+        }
+    }
+    echo implode("\n", $ans);
+}
+
+function example_ABC228_D()
+{
+    $MOD = 1048576;
+    [$Q] = fscanf(STDIN, "%d");
+    $S = new PseudoMultiSet(range(0,2**20-1));
+
+    $L = [];
+    $ans = [];
+    while($Q--){
+        [$T, $X] = fscanf(STDIN, "%d%d");
+        if($T === 1){
+            $XX = $X % $MOD;
+            $A = $S->lower_bound($XX);
+            if($S->get($A)){
+                $L[$S->get($A)] = $X;
+                $S->erase($A);
+            }else{
+                $A = $S->begin();
+                $L[$S->get($A)] = $X;
+                $S->erase($A);
+            }
+        }else{
+            $X %= $MOD;
+            $ans[] = $L[$X]??-1;
+        }
+    }
+    echo implode("\n", $ans);
+}
+
+
+function example_ABC241_D()
+{
+    [$Q] = fscanf(STDIN, "%d");
+    $S = new PseudoMultiSet();
+    while ($Q--) {
+        [$A, $B, $C] = fscanf(STDIN, "%d%d%d");
+        if ($A === 1) {
+            $S->add($B);
+        } elseif ($A === 2) {
+            $iterator = $S->upper_bound($B);
+            while ($C--) {
+                $iterator = $S->prev($iterator);
+            }
+            $ans[] = $S->get($iterator) ?? -1;
+
+        } else {
+            $C--;
+            $iterator = $S->lower_bound($B);
+            while ($C--) {
+                $iterator = $S->next($iterator);
+            }
+            $ans[] = $S->get($iterator) ?? -1;
+
+        }
+    }
+    echo implode("\n", $ans);
+}
 
 function example_ABC245_E()
 {
@@ -457,49 +606,3 @@ function example_ABC245_E()
     echo "Yes";
 }
 
-function example_ABC217_D()
-{
-    [$L, $Q] = fscanf(STDIN, "%d%d");
-    $S = new PseudoMultiSet();
-    $S->add(0);
-    $S->add($L);
-    $ans = [];
-    while ($Q--) {
-        [$C, $X] = fscanf(STDIN, "%d%d");
-        if ($C === 1) {
-            $S->add($X);
-        } else {
-            $T = $S->lower_bound($X);
-            $Z = $S->get($S->prev($T));
-            $ans[] = $S->get($T) - $Z;
-        }
-    }
-    echo implode("\n", $ans);
-}
-function example_ABC241_D()
-{
-    [$Q] = fscanf(STDIN, "%d");
-    $S = new PseudoMultiSet();
-    while ($Q--) {
-        [$A, $B, $C] = fscanf(STDIN, "%d%d%d");
-        if ($A === 1) {
-            $S->add($B);
-        } elseif ($A === 2) {
-            $iterator = $S->upper_bound($B);
-            while ($C--) {
-                $iterator = $S->prev($iterator);
-            }
-            $ans[] = $S->get($iterator) ?? -1;
-
-        } else {
-            $C--;
-            $iterator = $S->lower_bound($B);
-            while ($C--) {
-                $iterator = $S->next($iterator);
-            }
-            $ans[] = $S->get($iterator) ?? -1;
-
-        }
-    }
-    echo implode("\n", $ans);
-}
