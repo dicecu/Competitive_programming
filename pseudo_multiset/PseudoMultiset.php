@@ -396,7 +396,7 @@ class PseudoMultiSet // implements Countable, ArrayAccess, Iterator
             if($from_pointer[1] === 0){
                 $block = array_slice($block, $to_pointer[1] + 1);
             }else{
-                $block = array_merge(array_slice($block, 0, $from_pointer[0]), array_slice($block, $to_pointer[1] + 1));
+                $block = array_merge(array_slice($block, 0, $from_pointer[1]), array_slice($block, $to_pointer[1] + 1));
             }
         }else{
 
